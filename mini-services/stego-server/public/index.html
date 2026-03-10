@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Multimedia Steganography System</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="logo-section">
+        <img src="logo.svg" alt="Logo" class="logo">
+        <h1 class="app-title">Secure Multimedia Steganography</h1>
+      </div>
+      <nav class="nav-menu">
+        <button class="nav-btn active" data-page="home">Home</button>
+        <button class="nav-btn" data-page="encode">Encode</button>
+        <button class="nav-btn" data-page="decode">Decode</button>
+        <button class="nav-btn" data-page="convert">Convert Video</button>
+      </nav>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="page" id="home-page">
+      <div class="hero-section">
+        <h2 class="hero-title">Secure Multimedia Steganography</h2>
+        <p class="hero-description">
+          Hide secret messages or files (images, PDFs, documents, audio, video, etc.) in images, audio, and video using AES-256-GCM encryption and LSB steganography.
+          Your data is protected before being hidden in multimedia files.
+        </p>
+        <div class="hero-buttons">
+          <button class="btn btn-primary" data-page="encode">Encode Message</button>
+          <button class="btn btn-secondary" data-page="decode">Decode Message</button>
+        </div>
+      </div>
+
+      <div class="features-section">
+        <h3 class="section-title">Features</h3>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <h4 class="feature-title">Dual-Layer Encryption</h4>
+            <p class="feature-description">Messages are encrypted with AES-256-GCM for strong confidentiality + integrity.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <h4 class="feature-title">LSB Steganography</h4>
+            <p class="feature-description">Data is hidden using the Least Significant Bit technique across all media types.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📺</div>
+            <h4 class="feature-title">Multimedia Support</h4>
+            <p class="feature-description">Supports ALL image formats (JPEG, PNG, WebP, BMP, GIF, TIFF, AVIF, etc.), ALL audio formats (MP3, WAV, AAC, M4A, OGG, FLAC, etc. - auto-converted to WAV), and ALL video formats (MP4, AVI, MOV, MKV, WebM, etc.).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="how-it-works-section">
+        <h3 class="section-title">How It Works</h3>
+        <div class="steps-container">
+          <div class="step-column">
+            <h4 class="step-title">Encoding</h4>
+            <ol class="step-list">
+              <li>Upload your file (Image/Audio/Video)</li>
+              <li>Choose: Text message or File to hide</li>
+              <li>Set encryption password</li>
+              <li>System encrypts with AES-256-GCM</li>
+              <li>Download stego file</li>
+            </ol>
+          </div>
+          <div class="step-column">
+            <h4 class="step-title">Decoding</h4>
+            <ol class="step-list">
+              <li>Upload stego file</li>
+              <li>Enter the password</li>
+              <li>System extracts hidden data</li>
+              <li>Decrypts with AES-256-GCM</li>
+              <li>Shows original message or file</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="encode-page" style="display: none;">
+      <div class="page-content">
+        <h2 class="page-title">Encode Secret Message</h2>
+        <div class="form-card">
+          <form id="encodeForm" enctype="multipart/form-data">
+            <div class="form-group">
+              <label class="form-label">Upload File</label>
+              <div class="file-upload" id="encodeFileUpload">
+                <div class="upload-placeholder" id="encodeUploadPlaceholder">
+                  <span class="upload-icon">📤</span>
+                  <p class="upload-text">Click to upload or drag and drop</p>
+                  <p class="upload-hint">Supports ALL image formats (JPEG, PNG, WebP, BMP, GIF, TIFF, AVIF, etc.), ALL audio formats (MP3, WAV, AAC, M4A, OGG, FLAC, etc.), and ALL video formats (MP4, AVI, MOV, MKV, WebM, etc.).</p>
+                  <p class="upload-hint" style="color: var(--primary-color); font-weight: 600;">⚡ Output is lossless (PNG / WAV / MKV) for reliable decoding</p>
+                </div>
+                <div id="encodePreviewContainer" class="preview-container" style="display: none;">
+                  <img id="encodeImagePreview" class="preview-media" style="display: none;" alt="Preview">
+                  <audio id="encodeAudioPreview" class="preview-media" style="display: none;" controls></audio>
+                  <video id="encodeVideoPreview" class="preview-media" style="display: none;" controls></video>
+                </div>
+                <input type="file" id="encodeFile" name="file" accept="image/*,audio/*,video/*" class="file-input" required>
+              </div>
+            </div>
+
+            <!-- Secret Data Type Selection -->
+            <div class="form-group">
+              <label class="form-label">What Do You Want to Hide?</label>
+              <div class="data-type-selector">
+                <label class="data-type-option">
+                  <input type="radio" name="dataType" value="text" checked>
+                  <span class="data-type-label">📝 Text Message</span>
+                </label>
+                <label class="data-type-option">
+                  <input type="radio" name="dataType" value="file">
+                  <span class="data-type-label">📁 File (Image, PDF, Doc, etc.)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Text Message Input -->
+            <div class="form-group" id="textMessageGroup">
+              <label class="form-label" for="encodeMessage">Secret Message</label>
+              <textarea id="encodeMessage" name="message" class="form-textarea" placeholder="Enter your secret message here..." required></textarea>
+            </div>
+
+            <!-- Secret File Input -->
+            <div class="form-group" id="secretFileGroup" style="display: none;">
+              <label class="form-label">Upload Secret File</label>
+              <div class="file-upload" id="secretFileUpload">
+                <div class="upload-placeholder" id="secretUploadPlaceholder">
+                  <span class="upload-icon">🔐</span>
+                  <p class="upload-text">Click to upload or drag and drop</p>
+                  <p class="upload-hint">Any file type: Images, PDF, Word, Excel, Audio, Video, etc.</p>
+                </div>
+                <div id="secretFilePreviewContainer" class="preview-container" style="display: none;">
+                  <p id="secretFileName" class="file-name-preview"></p>
+                  <p id="secretFileSize" class="file-size-preview"></p>
+                </div>
+                <input type="file" id="secretFile" name="secretFile" class="file-input" accept="*/*">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="encodePassword">Password</label>
+              <div class="password-input">
+                <input type="password" id="encodePassword" name="password" class="form-input" placeholder="Enter a password" required>
+                <button type="button" class="password-toggle" data-target="encodePassword">👁️</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full" id="encodeBtn">
+              <span class="btn-text">Encode & Encrypt</span>
+              <span class="btn-loader" style="display: none;">⏳</span>
+            </button>
+          </form>
+
+          <div id="encodeResult" class="result-card" style="display: none;">
+            <div class="result-content">
+              <span class="result-icon" id="encodeResultIcon">✅</span>
+              <span class="result-message" id="encodeResultMessage"></span>
+            </div>
+          </div>
+
+          <div id="stegoResult" class="stego-card" style="display: none;">
+            <h3 class="stego-title" id="stegoTitle">Stego File Ready</h3>
+            <div class="stego-content">
+              <div id="stegoPreviewContainer">
+                <img id="stegoImage" class="stego-preview" style="display: none;" alt="Stego Image">
+                <audio id="stegoAudio" class="stego-preview" style="display: none;" controls></audio>
+                <video id="stegoVideo" class="stego-preview" style="display: none;" controls></video>
+              </div>
+              <div class="stego-info">
+                <p class="stego-description" id="stegoDescription">
+                  Your message has been encrypted and hidden in this file using AES-256-GCM encryption and LSB steganography.
+                </p>
+                <button id="downloadStego" class="btn btn-primary">Download File</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="decode-page" style="display: none;">
+      <div class="page-content">
+        <h2 class="page-title">Decode Secret Message</h2>
+        <div class="form-card">
+          <form id="decodeForm" enctype="multipart/form-data">
+            <div class="form-group">
+              <label class="form-label">Upload Stego File</label>
+              <div class="file-upload" id="decodeFileUpload">
+                <div class="upload-placeholder" id="decodeUploadPlaceholder">
+                  <span class="upload-icon">📤</span>
+                  <p class="upload-text">Click to upload or drag and drop</p>
+                  <p class="upload-hint">Upload the stego file (ALL image/audio/video formats supported)</p>
+                </div>
+                <div id="decodePreviewContainer" class="preview-container" style="display: none;">
+                  <img id="decodeImagePreview" class="preview-media" style="display: none;" alt="Preview">
+                  <audio id="decodeAudioPreview" class="preview-media" style="display: none;" controls></audio>
+                  <video id="decodeVideoPreview" class="preview-media" style="display: none;" controls></video>
+                </div>
+                <input type="file" id="decodeFile" name="file" accept="image/*,audio/*,video/*" class="file-input" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="decodePassword">Password</label>
+              <div class="password-input">
+                <input type="password" id="decodePassword" name="password" class="form-input" placeholder="Enter the password" required>
+                <button type="button" class="password-toggle" data-target="decodePassword">👁️</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full" id="decodeBtn">
+              <span class="btn-text">Decode & Decrypt</span>
+              <span class="btn-loader" style="display: none;">⏳</span>
+            </button>
+          </form>
+
+          <div id="decodeResult" class="result-card" style="display: none;">
+            <div class="result-content">
+              <span class="result-icon" id="decodeResultIcon">✅</span>
+              <span class="result-message" id="decodeResultMessage"></span>
+            </div>
+          </div>
+
+          <div id="decodedMessageCard" class="message-card" style="display: none;">
+            <h3 class="message-title">Decoded Secret Data</h3>
+            <div class="message-content">
+              <!-- Text Message Display -->
+              <p id="decodedMessage" class="message-text"></p>
+              <!-- File Download (hidden by default) -->
+              <div id="decodedFileContainer" style="display: none;">
+                <p id="decodedFileInfo" class="file-info"></p>
+                <button id="downloadDecodedFile" class="btn btn-secondary">Download Decoded File</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="convert-page" style="display: none;">
+      <div class="page-content">
+        <h2 class="page-title">Convert Video to MKV</h2>
+        <div class="form-card">
+          <form id="convertForm" enctype="multipart/form-data">
+            <div class="form-group">
+              <label class="form-label">Upload Video</label>
+              <div class="file-upload" id="convertFileUpload">
+                <div class="upload-placeholder" id="convertUploadPlaceholder">
+                  <span class="upload-icon">📤</span>
+                  <p class="upload-text">Click to upload or drag and drop</p>
+                  <p class="upload-hint">Upload any video (MP4, AVI, MOV, MKV, WebM, etc.)</p>
+                </div>
+                <div id="convertPreviewContainer" class="preview-container" style="display: none;">
+                  <video id="convertPreview" class="preview-media" style="display: none;" controls></video>
+                </div>
+                <input type="file" id="convertFile" name="file" accept="video/*" class="file-input" required>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full" id="convertBtn">
+              <span class="btn-text">Convert to MKV</span>
+              <span class="btn-loader" style="display: none;">⏳</span>
+            </button>
+          </form>
+
+          <div id="convertResult" class="result-card" style="display: none;">
+            <div class="result-content">
+              <span class="result-icon" id="convertResultIcon">✅</span>
+              <span class="result-message" id="convertResultMessage"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-left">
+        <img src="logo.svg" alt="Logo" class="footer-logo">
+        <span class="footer-title">Secure Multimedia Steganography</span>
+      </div>
+      <p class="footer-text">AES-256-GCM Encryption & LSB Steganography for Images, Audio, and Video</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
