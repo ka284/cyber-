@@ -17,7 +17,6 @@
         <button class="nav-btn active" data-page="home">Home</button>
         <button class="nav-btn" data-page="encode">Encode</button>
         <button class="nav-btn" data-page="decode">Decode</button>
-        <button class="nav-btn" data-page="convert">Convert Video</button>
       </nav>
       <button class="theme-toggle" id="themeToggle" title="Toggle theme">
         <span class="theme-icon">🌙</span>
@@ -248,41 +247,6 @@
       </div>
     </section>
 
-    <section class="page" id="convert-page" style="display: none;">
-      <div class="page-content">
-        <h2 class="page-title">Convert Video to MKV</h2>
-        <div class="form-card">
-          <form id="convertForm" enctype="multipart/form-data">
-            <div class="form-group">
-              <label class="form-label">Upload Video</label>
-              <div class="file-upload" id="convertFileUpload">
-                <div class="upload-placeholder" id="convertUploadPlaceholder">
-                  <span class="upload-icon">📤</span>
-                  <p class="upload-text">Click to upload or drag and drop</p>
-                  <p class="upload-hint">Upload any video (MP4, AVI, MOV, MKV, WebM, etc.)</p>
-                </div>
-                <div id="convertPreviewContainer" class="preview-container" style="display: none;">
-                  <video id="convertPreview" class="preview-media" style="display: none;" controls></video>
-                </div>
-                <input type="file" id="convertFile" name="file" accept="video/*" class="file-input" required>
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-full" id="convertBtn">
-              <span class="btn-text">Convert to MKV</span>
-              <span class="btn-loader" style="display: none;">⏳</span>
-            </button>
-          </form>
-
-          <div id="convertResult" class="result-card" style="display: none;">
-            <div class="result-content">
-              <span class="result-icon" id="convertResultIcon">✅</span>
-              <span class="result-message" id="convertResultMessage"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer class="footer">

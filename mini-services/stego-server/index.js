@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import multer from 'multer';
 import cors from 'cors';
@@ -13,6 +14,7 @@ import { encodeBytes as encodeImageBytes, decodeBytes as decodeImageBytes, isSup
 import { encodeAudioBytes, decodeAudioBytes, calculateAudioCapacity } from './modules/audio-steganography.js';
 import { encodeVideoBytes, decodeVideoBytes, calculateVideoCapacity } from './modules/video-steganography.js';
 import { packEncryptedEnvelopeV1, unpackEncryptedEnvelopeV1 } from './modules/payload-envelope.js';
+import { initDb, logOperation, getDbStatus } from './modules/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -22,6 +24,8 @@ const PORT = process.env.PORT || 3030;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(join(__dirname, 'public')));
+
+await initDb();
 
 const uploadDir = join(__dirname, 'uploads');
 const tempDir = join(__dirname, 'temp');
@@ -46,6 +50,21 @@ function formatBytes(bytes) {
   }
   const shown = u === 0 ? `${Math.round(v)}` : v.toFixed(v >= 10 ? 1 : 2);
   return `${shown} ${units[u]}`;
+}
+
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.trim().length > 0) {
+    return forwarded.split(',')[0].trim();
+  }
+  if (Array.isArray(forwarded) && forwarded.length > 0) {
+    return forwarded[0].trim();
+  }
+  return req.socket?.remoteAddress || null;
+}
+
+function getUserAgent(req) {
+  return req.headers['user-agent'] || null;
 }
 
 /**
@@ -212,10 +231,16 @@ app.post('/api/encode', upload.single('file'), async (req, res) => {
   const timestamp = Date.now();
   let inputPath, outputPath, finalOutputPath, fileType, convertedPath = null;
   let resultPath = null;
+  let capacity = null;
+  let payloadBytes = null;
+  let actualCarrierType = null;
+  let inputBytes = null;
+  const requestMeta = { clientIp: getClientIp(req), userAgent: getUserAgent(req) };
 
   try {
     const { message, password, carrierType } = req.body;
     const file = req.file;
+    inputBytes = file?.buffer?.length ?? null;
 
     if (!file) return res.status(400).json({ success: false, error: 'No file uploaded' });
     if (!message || !message.trim()) return res.status(400).json({ success: false, error: 'No message' });
@@ -245,7 +270,7 @@ app.post('/api/encode', upload.single('file'), async (req, res) => {
     // Format: CARRIER::image::actual_message
     const allowedCarrierTypes = new Set(['image', 'audio', 'video']);
     const normalizedCarrierType = allowedCarrierTypes.has(carrierType) ? carrierType : null;
-    const actualCarrierType = normalizedCarrierType || fileType;
+    actualCarrierType = normalizedCarrierType || fileType;
     const messageWithCarrier = `CARRIER::${actualCarrierType}::${message}`;
     const payload = compressPayload(messageWithCarrier);
 
@@ -260,7 +285,7 @@ app.post('/api/encode', upload.single('file'), async (req, res) => {
     }
 
     // Validate and calculate capacity based on file type
-    let capacity = 0;
+    capacity = 0;
     if (fileType === 'image') {
       if (!await isSupportedImage(inputPath)) {
         throw new Error('Invalid image file');
@@ -283,6 +308,7 @@ app.post('/api/encode', upload.single('file'), async (req, res) => {
     // Encrypt + pack into compact binary envelope to avoid base64 expansion
     const encrypted = encryptWithPasswordBytes(payload, password);
     const envelope = packEncryptedEnvelopeV1(encrypted);
+    payloadBytes = envelope.length;
 
     console.log(`[Encode] Data to embed size: ${envelope.length} bytes (${formatBytes(envelope.length)})`);
     if (envelope.length > capacity) {
@@ -331,6 +357,18 @@ app.post('/api/encode', upload.single('file'), async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="stego_${timestamp}${processingExtension}"`);
     res.send(stegoBuffer);
 
+    void logOperation({
+      operation: 'encode',
+      fileType: fileType || 'unknown',
+      carrierType: actualCarrierType,
+      inputBytes,
+      payloadBytes,
+      capacityBytes: capacity,
+      status: 'success',
+      errorMessage: null,
+      ...requestMeta
+    });
+
     console.log(`[Encode] Successfully encoded ${fileType} file to ${processingExtension}`);
 
   } catch (error) {
@@ -341,6 +379,17 @@ app.post('/api/encode', upload.single('file'), async (req, res) => {
       if (finalOutputPath && existsSync(finalOutputPath)) unlinkSync(finalOutputPath);
       if (convertedPath && existsSync(convertedPath)) unlinkSync(convertedPath);
     } catch (e) {}
+    void logOperation({
+      operation: 'encode',
+      fileType: fileType || 'unknown',
+      carrierType: actualCarrierType,
+      inputBytes,
+      payloadBytes,
+      capacityBytes: capacity,
+      status: 'error',
+      errorMessage: error.message || 'Encoding failed',
+      ...requestMeta
+    });
     res.status(500).json({ success: false, error: error.message || 'Encoding failed' });
   }
 });
@@ -348,10 +397,14 @@ app.post('/api/encode', upload.single('file'), async (req, res) => {
 app.post('/api/decode', upload.single('file'), async (req, res) => {
   const timestamp = Date.now();
   let inputPath, fileType, convertedPath = null;
+  let payloadBytes = null;
+  let inputBytes = null;
+  const requestMeta = { clientIp: getClientIp(req), userAgent: getUserAgent(req) };
 
   try {
     const { password } = req.body;
     const file = req.file;
+    inputBytes = file?.buffer?.length ?? null;
 
     if (!file) return res.status(400).json({ success: false, error: 'No file uploaded' });
     if (!password || !password.trim()) return res.status(400).json({ success: false, error: 'No password' });
@@ -391,6 +444,7 @@ app.post('/api/decode', upload.single('file'), async (req, res) => {
       throw new Error('No AES-256-GCM stego payload found (legacy formats are not supported). Re-encode with the updated server.');
     }
 
+    payloadBytes = envelopeBytes?.length ?? null;
     let envelope;
     try {
       envelope = unpackEncryptedEnvelopeV1(envelopeBytes);
@@ -429,68 +483,36 @@ app.post('/api/decode', upload.single('file'), async (req, res) => {
 
     console.log(`[Decode] Successfully decoded ${fileType} file`);
     res.json({ success: true, message: actualMessage, fileType });
+
+    void logOperation({
+      operation: 'decode',
+      fileType: fileType || 'unknown',
+      carrierType: null,
+      inputBytes,
+      payloadBytes,
+      capacityBytes: null,
+      status: 'success',
+      errorMessage: null,
+      ...requestMeta
+    });
   } catch (error) {
     console.error('[Decode] Error:', error);
     try {
       if (inputPath && existsSync(inputPath)) unlinkSync(inputPath);
       if (convertedPath && existsSync(convertedPath)) unlinkSync(convertedPath);
     } catch (e) {}
+    void logOperation({
+      operation: 'decode',
+      fileType: fileType || 'unknown',
+      carrierType: null,
+      inputBytes,
+      payloadBytes,
+      capacityBytes: null,
+      status: 'error',
+      errorMessage: error.message || 'Decoding failed',
+      ...requestMeta
+    });
     res.status(500).json({ success: false, error: error.message || 'Decoding failed' });
-  }
-});
-
-// Video format converter endpoint (no steganography, just format conversion to MKV)
-app.post('/api/convert-video', upload.single('file'), async (req, res) => {
-  const timestamp = Date.now();
-  let inputPath, outputPath;
-
-  try {
-    const file = req.file;
-
-    if (!file) return res.status(400).json({ success: false, error: 'No file uploaded' });
-
-    if (!file.mimetype.startsWith('video/')) {
-      return res.status(400).json({ success: false, error: 'Please upload a video file' });
-    }
-
-    const inputExt = file.originalname.toLowerCase().split('.').pop();
-    inputPath = join(uploadDir, `input_${timestamp}.${inputExt}`);
-    outputPath = join(uploadDir, `output_${timestamp}.mkv`);
-
-    ensureDir(uploadDir);
-    writeFileSync(inputPath, file.buffer);
-
-    console.log(`[Convert] Input: ${file.originalname}, Output: output_${timestamp}.mkv`);
-
-    // Convert video to MKV format (no re-encoding, just container change)
-    const cmd = `ffmpeg -i "${inputPath}" -c copy -y "${outputPath}" 2>&1`;
-    execSync(cmd, { stdio: 'ignore' });
-
-    // Verify the output file was created
-    if (!existsSync(outputPath)) {
-      throw new Error('MKV conversion failed - output file not created');
-    }
-
-    const outputBuffer = readFileSync(outputPath);
-
-    // Cleanup
-    unlinkSync(inputPath);
-    unlinkSync(outputPath);
-
-    // Send response
-    res.setHeader('Content-Type', 'video/x-matroska');
-    res.setHeader('Content-Disposition', `attachment; filename="converted_${timestamp}.mkv"`);
-    res.send(outputBuffer);
-
-    console.log(`[Convert] Successfully converted to MKV`);
-
-  } catch (error) {
-    console.error('[Convert] Error:', error);
-    try {
-      if (existsSync(inputPath)) unlinkSync(inputPath);
-      if (existsSync(outputPath)) unlinkSync(outputPath);
-    } catch (e) {}
-    res.status(500).json({ success: false, error: error.message || 'Video conversion failed' });
   }
 });
 
@@ -498,6 +520,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'Secure Multimedia Steganography System running',
+    db: getDbStatus(),
     supportedFormats: {
       images: ['ALL image formats supported - JPG, PNG, WebP, BMP, GIF, TIFF, SVG, AVIF, HEIC, PSD, RAW, etc.'],
       audio: ['ALL audio formats supported - MP3, WAV, AAC, M4A, OGG, FLAC, WMA, OPUS, AIFF, etc. (auto-converted to WAV)'],

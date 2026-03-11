@@ -14,12 +14,11 @@ cd mini-services/stego-server
 ### 2. Install dependencies
 ```bash
 bun install
-# OR
-npm install
 ```
 
 ### 3. Start the server
 ```bash
+# Dev (hot reload)
 bun run dev
 # OR
 node index.js
@@ -28,6 +27,40 @@ node index.js
 ### 4. Open in browser
 ```
 http://localhost:3030/
+```
+
+---
+
+## 🗄️ MySQL Setup (Required for Operation Logs)
+
+The server writes encode/decode metadata to MySQL (no secrets or passwords are stored).
+
+### .env File (Recommended)
+Create `mini-services/stego-server/.env` using the template below.
+
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=stego
+PORT=3030
+```
+
+### Environment Variables
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=your_user
+DB_PASSWORD=your_password
+DB_NAME=stego
+```
+
+### Notes
+- The server will **auto-create** the database and `stego_operations` table if your MySQL user has permission.
+- If your user cannot create databases, create it manually:
+```
+CREATE DATABASE stego;
 ```
 
 ---

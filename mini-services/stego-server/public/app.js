@@ -481,112 +481,6 @@ function hideResult(id) {
   document.getElementById(id).style.display = 'none';
 }
 
-// Convert video to MKV function
-async function convertVideo(e) {
-  e.preventDefault();
-  
-  const btn = document.getElementById('convertBtn');
-  const btnText = btn.querySelector('.btn-text');
-  const btnLoader = btn.querySelector('.btn-loader');
-  
-  hideResult('convertResult');
-  
-  btn.disabled = true;
-  btnText.style.display = 'none';
-  btnLoader.style.display = 'inline';
-
-  try {
-    let url = `${API_BASE}/convert-video`;
-    if (!isLocalhost && !isStegoServer) url += '?XTransformPort=3030';
-
-    const response = await fetch(url, {
-      method: 'POST',
-      body: new FormData(e.target)
-    });
-
-    if (response.ok) {
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      
-      // Show download button
-      document.getElementById('convertResult').innerHTML = `
-        <div class="result-content">
-          <span class="result-icon">✅</span>
-          <span class="result-message">Video converted successfully!</span>
-          <button id="downloadConverted" class="btn btn-primary" style="margin-top: 1rem;">Download MKV File</button>
-        </div>
-      `;
-      document.getElementById('convertResult').style.display = 'block';
-      
-      // Setup download button
-      document.getElementById('downloadConverted').onclick = () => {
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `converted_${Date.now()}.mkv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      };
-    } else {
-      const error = await response.json();
-      showResult('convertResult', false, error.error || 'Conversion failed');
-    }
-  } catch (error) {
-    console.error(error);
-    showResult('convertResult', false, 'Network error. Please try again.');
-  } finally {
-    btn.disabled = false;
-    btnText.style.display = 'inline';
-    btnLoader.style.display = 'none';
-  }
-}
-
-// Setup convert file upload
-function setupConvertUpload() {
-  const container = document.getElementById('convertFileUpload');
-  const placeholder = document.getElementById('convertUploadPlaceholder');
-  const previewContainer = document.getElementById('convertPreviewContainer');
-  const input = document.getElementById('convertFile');
-  const preview = document.getElementById('convertPreview');
-
-  if (!container || !input || !preview) return;
-
-  input.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    
-    reader.onload = (event) => {
-      preview.style.display = 'block';
-      preview.src = event.target.result;
-      previewContainer.style.display = 'block';
-      placeholder.style.display = 'none';
-    };
-    
-    reader.readAsDataURL(file);
-  });
-
-  container.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    container.classList.add('dragover');
-  });
-
-  container.addEventListener('dragleave', () => {
-    container.classList.remove('dragover');
-  });
-
-  container.addEventListener('drop', (e) => {
-    e.preventDefault();
-    container.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      input.files = e.dataTransfer.files;
-      input.dispatchEvent(new Event('change'));
-    }
-  });
-}
-
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
@@ -606,11 +500,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setupFileUpload(true);  // encode
   setupFileUpload(false); // decode
-  setupConvertUpload();  // convert
   setupSecretFileUpload();  // secret file upload
   setupDataTypeSelector();  // data type selector
 
   document.getElementById('encodeForm').addEventListener('submit', encode);
   document.getElementById('decodeForm').addEventListener('submit', decode);
-  document.getElementById('convertForm').addEventListener('submit', convertVideo);
 });
