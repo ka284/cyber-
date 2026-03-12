@@ -262,6 +262,41 @@ function showResult(id, success, message) {
   card.style.display = 'block';
 }
 
+function resetMediaUpload(prefix) {
+  const input = document.getElementById(`${prefix}File`);
+  const previewContainer = document.getElementById(`${prefix}PreviewContainer`);
+  const placeholder = document.getElementById(`${prefix}UploadPlaceholder`);
+
+  if (input) input.value = '';
+  if (previewContainer) previewContainer.style.display = 'none';
+  if (placeholder) placeholder.style.display = 'block';
+
+  ['Image', 'Audio', 'Video'].forEach(mediaType => {
+    const preview = document.getElementById(`${prefix}${mediaType}Preview`);
+    if (preview) {
+      if (typeof preview.pause === 'function') preview.pause();
+      preview.src = '';
+      if (typeof preview.load === 'function') preview.load();
+      preview.style.display = 'none';
+    }
+  });
+}
+
+function resetStegoPreview() {
+  const stegoResult = document.getElementById('stegoResult');
+  if (stegoResult) stegoResult.style.display = 'none';
+
+  ['stegoImage', 'stegoAudio', 'stegoVideo'].forEach(id => {
+    const preview = document.getElementById(id);
+    if (preview) {
+      if (typeof preview.pause === 'function') preview.pause();
+      preview.src = '';
+      if (typeof preview.load === 'function') preview.load();
+      preview.style.display = 'none';
+    }
+  });
+}
+
 // Encode function
 async function encode(e) {
   e.preventDefault();
@@ -464,6 +499,10 @@ async function decode(e) {
 
       document.getElementById('decodedMessageCard').style.display = 'block';
       showResult('decodeResult', true, 'Data decoded successfully!');
+
+      // Clear encode carrier preview so a new file can be added after decode.
+      resetMediaUpload('encode');
+      resetStegoPreview();
     } else {
       showResult('decodeResult', false, data.error || 'Decoding failed');
     }
