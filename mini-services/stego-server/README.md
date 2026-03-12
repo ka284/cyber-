@@ -31,9 +31,9 @@ http://localhost:3030/
 
 ---
 
-## 🗄️ MySQL Setup (Required for Operation Logs)
+## 🗄️ MySQL Setup (Optional for Operation Logs)
 
-The server writes encode/decode metadata to MySQL (no secrets or passwords are stored).
+The server can write encode/decode metadata to MySQL (no secrets or passwords are stored). If you don't want MySQL, set `DB_DISABLED=true` and the server will skip DB initialization and logging.
 
 ### .env File (Recommended)
 Create `mini-services/stego-server/.env` using the template below.
@@ -44,6 +44,7 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=stego
+DB_DISABLED=false
 PORT=3030
 ```
 

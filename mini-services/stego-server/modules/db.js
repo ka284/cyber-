@@ -5,6 +5,9 @@ const DB_PORT = Number.parseInt(process.env.DB_PORT || '3306', 10);
 const DB_USER = process.env.DB_USER || 'root';
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
 const DB_NAME = process.env.DB_NAME || 'stego';
+const DB_DISABLED = ['1', 'true', 'yes', 'on'].includes(
+  String(process.env.DB_DISABLED || '').trim().toLowerCase()
+);
 
 let pool = null;
 let dbReady = false;
@@ -21,6 +24,12 @@ function normalizeText(value, maxLength) {
 }
 
 export async function initDb() {
+  if (DB_DISABLED) {
+    dbReady = false;
+    dbError = null;
+    console.log('[DB] Disabled via DB_DISABLED');
+    return;
+  }
   try {
     const baseConfig = {
       host: DB_HOST,
@@ -77,12 +86,13 @@ export function getDbStatus() {
     error: dbError ? dbError.message : null,
     host: DB_HOST,
     port: DB_PORT,
-    database: DB_NAME
+    database: DB_NAME,
+    disabled: DB_DISABLED
   };
 }
 
 export async function logOperation(entry) {
-  if (!pool || !dbReady) return;
+  if (DB_DISABLED || !pool || !dbReady) return;
 
   const {
     operation,

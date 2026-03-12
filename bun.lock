@@ -1,0 +1,11 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "secure-stego-system",
+      "dependencies": {}
+    }
+  },
+  "packages": {}
+}
