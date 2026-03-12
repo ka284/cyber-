@@ -297,6 +297,52 @@ function resetStegoPreview() {
   });
 }
 
+function resetEncodeFormFields() {
+  const messageInput = document.getElementById('encodeMessage');
+  const passwordInput = document.getElementById('encodePassword');
+  const secretFileInput = document.getElementById('secretFile');
+  const encodeResult = document.getElementById('encodeResult');
+  const secretPreview = document.getElementById('secretFilePreviewContainer');
+  const secretPlaceholder = document.getElementById('secretUploadPlaceholder');
+  const textGroup = document.getElementById('textMessageGroup');
+  const fileGroup = document.getElementById('secretFileGroup');
+
+  if (messageInput) messageInput.value = '';
+  if (passwordInput) passwordInput.value = '';
+  if (secretFileInput) secretFileInput.value = '';
+  if (encodeResult) encodeResult.style.display = 'none';
+  if (secretPreview) secretPreview.style.display = 'none';
+  if (secretPlaceholder) secretPlaceholder.style.display = 'block';
+  const secretName = document.getElementById('secretFileName');
+  const secretSize = document.getElementById('secretFileSize');
+  if (secretName) secretName.textContent = '';
+  if (secretSize) secretSize.textContent = '';
+
+  // Reset data type selection to text
+  const textRadio = document.querySelector('input[name="dataType"][value="text"]');
+  if (textRadio) textRadio.checked = true;
+  if (textGroup) textGroup.style.display = 'block';
+  if (fileGroup) fileGroup.style.display = 'none';
+  if (messageInput) messageInput.required = true;
+  if (secretFileInput) secretFileInput.required = false;
+}
+
+function resetDecodeFormFields() {
+  const passwordInput = document.getElementById('decodePassword');
+  const decodeResult = document.getElementById('decodeResult');
+  const decodedMessageCard = document.getElementById('decodedMessageCard');
+  const decodedMessage = document.getElementById('decodedMessage');
+  const decodedFileContainer = document.getElementById('decodedFileContainer');
+  const decodedFileInfo = document.getElementById('decodedFileInfo');
+
+  if (passwordInput) passwordInput.value = '';
+  if (decodeResult) decodeResult.style.display = 'none';
+  if (decodedMessageCard) decodedMessageCard.style.display = 'none';
+  if (decodedMessage) decodedMessage.textContent = '';
+  if (decodedFileContainer) decodedFileContainer.style.display = 'none';
+  if (decodedFileInfo) decodedFileInfo.textContent = '';
+}
+
 // Encode function
 async function encode(e) {
   e.preventDefault();
@@ -307,6 +353,8 @@ async function encode(e) {
 
   hideResult('encodeResult');
   document.getElementById('stegoResult').style.display = 'none';
+  resetMediaUpload('decode');
+  resetDecodeFormFields();
 
   btn.disabled = true;
   btnText.style.display = 'none';
@@ -503,6 +551,7 @@ async function decode(e) {
       // Clear encode carrier preview so a new file can be added after decode.
       resetMediaUpload('encode');
       resetStegoPreview();
+      resetEncodeFormFields();
     } else {
       showResult('decodeResult', false, data.error || 'Decoding failed');
     }
