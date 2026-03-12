@@ -154,6 +154,7 @@ mini-services/stego-server/
 3. **Runs on**: Port 3030
 4. **Access at**: `http://localhost:3030/`
 5. **No Next.js** - We're using pure Node.js + HTML/CSS/JS
+6. **MySQL for logs** - Set `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
 
 ---
 
